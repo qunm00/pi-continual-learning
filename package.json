@@ -1,0 +1,50 @@
+{
+	"name": "pi-continual-learning",
+	"version": "1.0.0",
+	"description": "Continual learning for pi: automatically mines session transcripts for durable user preferences and workspace facts, incrementally updating AGENTS.md.",
+	"author": "pi-continual-learning",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/user/pi-continual-learning.git"
+	},
+	"homepage": "https://github.com/user/pi-continual-learning#readme",
+	"bugs": {
+		"url": "https://github.com/user/pi-continual-learning/issues"
+	},
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-extension",
+		"continual-learning",
+		"agent-memory",
+		"transcripts",
+		"learning"
+	],
+	"type": "module",
+	"packageManager": "pnpm@11.5.0",
+	"engines": {
+		"pnpm": ">=11.5.0",
+		"node": ">=24.0.0"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"biome:fix": "biome check --write"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": ">=0.80.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.4",
+		"@types/node": "^24.0.0",
+		"typescript": "^7.0.0"
+	},
+	"pi": {
+		"extensions": [
+			"./extensions/continual-learning/index.ts"
+		],
+		"skills": [
+			"./skills"
+		]
+	}
+}

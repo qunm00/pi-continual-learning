@@ -1,0 +1,5 @@
+saveExact: false
+allowBuilds:
+  '@google/genai': true
+  core-js: true
+  protobufjs: true
