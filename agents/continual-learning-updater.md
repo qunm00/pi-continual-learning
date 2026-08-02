@@ -22,8 +22,12 @@ Use when the extension triggers a memory update cycle, or when the user asks to 
 2. Load the incremental session index from `.pi/state/continual-learning-index.json` if present.
    The index maps session file paths → last known mtime (ms).
 
-3. Discover session files under `~/.pi/agent/sessions/` that are new or have newer mtimes than the index.
-   Session files are organized by project directory hash. Use `find ~/.pi/agent/sessions/ -name "*.jsonl"` to locate them.
+3. Discover session files that are new or have newer mtimes than the index. Search in this order:
+   a. **Project level**: `.pi/sessions/` under the project root
+      (use `find .pi/sessions/ -name "*.jsonl"` from the project root)
+   b. **User profile level**: `~/.pi/agent/sessions/`
+      (use `find ~/.pi/agent/sessions/ -name "*.jsonl"`; files here are organized by project directory path)
+   Process project-level files first, then user-profile files. If a file exists in both locations, prefer the project-level one. Use `find` + `stat` to compare mtimes against the index and only process files that are new or changed.
 
 4. For each new or changed session file:
    - Parse the JSONL lines (each line is a JSON entry)

@@ -1,3 +1,6 @@
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Local runtime state (sessions, extension state)
+.pi/

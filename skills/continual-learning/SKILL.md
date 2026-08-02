@@ -18,7 +18,10 @@ Use when the user asks to mine prior chats, maintain `AGENTS.md`, or run the con
    - `## Learned User Preferences`
    - `## Learned Workspace Facts`
 
-2. Discover session files under `~/.pi/agent/sessions/` that are new or have been modified since the last update. Use `find` and `stat` to check mtimes relative to `.pi/state/continual-learning-index.json`.
+2. Discover session files that are new or have been modified since the last update. Search in this order:
+   - **Project level** first: `.pi/sessions/` under the project root
+   - **User profile level** second: `~/.pi/agent/sessions/`
+   Process project-level files first. Use `find` and `stat` to check mtimes relative to `.pi/state/continual-learning-index.json`.
 
 3. For each new or changed session file, parse the JSONL content to extract high-signal, durable insights:
    - Recurring user preferences or corrections (things the user asked for more than once)
