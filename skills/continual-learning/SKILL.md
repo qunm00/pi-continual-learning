@@ -12,6 +12,17 @@ Keep `AGENTS.md` current by mining session transcripts for reusable, high-signal
 
 Use when the user asks to mine prior chats, maintain `AGENTS.md`, or run the continual-learning loop. Also triggered automatically by the continual-learning extension after enough turns and elapsed time.
 
+## Operating rules
+
+These rules always apply, for both the manual trigger and the automatic trigger:
+
+- **Ask permission before running.** Use `ask_user` and wait for a clear yes before touching any file. Do not start the update while the request is unanswered or skipped.
+- **Run inline.** Do the discovery, parsing, and merge yourself in the current session. Do not delegate to a subagent.
+- **Stash before running.** If the working tree has uncommitted changes, run `git stash push -u -m "continual-learning: pre-run stash"` first. Note the stash name so it can be reported later. Do not pop it during the run — the files you write must not mix with the user's work in progress.
+- **Commit when finished.** After a successful run that produced changes, stage the updated `AGENTS.md` (and the index file if it is tracked) and commit with the message `docs: update AGENTS.md via continual-learning`. Do not push. Leave the user's stash in place and tell the user it exists, so they can pop it themselves.
+
+If the run produces no changes to `AGENTS.md`, still refresh the index and do not create an empty commit.
+
 ## Workflow
 
 1. Read existing `AGENTS.md` from the project root. If it does not exist, create it with only:
@@ -59,4 +70,6 @@ Use when the user asks to mine prior chats, maintain `AGENTS.md`, or run the con
 ## Output
 
 - Updated `AGENTS.md` and `.pi/state/continual-learning-index.json` when changes are made
+- A single commit for the changes, and a note about any pre-run stash
 - Otherwise exactly `No high-signal memory updates.`
+- If the user declines or skips the permission question, stop immediately and make no changes
