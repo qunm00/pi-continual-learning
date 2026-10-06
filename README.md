@@ -6,7 +6,9 @@ The plugin combines:
 
 - An **extension** that hooks `agent_settled` events and decides when to trigger learning
 - A **skill** (`continual-learning`) that orchestrates the learning flow
-- An **agent** (`continual-learning-updater`) that mines new or changed session transcripts and updates `AGENTS.md`
+- An **agent** (`continual-learning-updater`) that describes the same flow for explicit subagent use
+
+When the extension triggers, the main agent runs the flow inline. It asks the user for permission, stashes pending changes, mines new or changed session transcripts, updates `AGENTS.md`, and commits the result without pushing.
 
 It is designed to avoid noisy rewrites by:
 

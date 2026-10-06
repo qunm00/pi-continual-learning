@@ -16,26 +16,31 @@ export const TRIAL_DEFAULT_DURATION_MINUTES = 24 * 60;
 
 /**
  * Follow-up message sent to the agent when the memory update cadence is met.
- * The agent delegates the update to a subagent, which discovers session files
- * first at the project level (.pi/sessions/), then at the user profile level
- * (~/.pi/agent/sessions/).
+ * The agent runs the update inline: it asks permission, stashes pending work,
+ * discovers session files first at the project level (.pi/sessions/), then at
+ * the user profile level (~/.pi/agent/sessions/), and commits the result.
  */
-export const CONTINUAL_LEARNING_MESSAGE = `Run the continual-learning memory update now by delegating to a subagent.
+export const CONTINUAL_LEARNING_MESSAGE = `Run the continual-learning memory update now. Follow the \`continual-learning\` skill.
+
+## Before you start
+
+1. Ask the user for permission using the \`ask_user\` tool and wait for a clear
+   yes. If the question is skipped or declined, stop and change nothing.
+
+2. If \`git status --porcelain\` reports uncommitted changes, stash them first:
+
+   \`\`\`
+   git stash push -u -m "continual-learning: pre-run stash"
+   \`\`\`
+
+   Do not pop the stash during this run. Remember that it exists so you can tell
+   the user about it at the end.
 
 ## Instructions
 
-1. Launch the \`continual-learning-updater\` subagent via the Agent tool
-   (subagent_type: "continual-learning-updater"; fall back to "general-purpose"
-   if that type is not registered). Run it in the foreground and wait for it to
-   finish. Do not parse session files or edit \`AGENTS.md\` yourself.
+1. Run the update inline in this session. Do not delegate to a subagent.
 
-2. Give the subagent a self-contained prompt that includes:
-   - The project root (your current working directory), where \`AGENTS.md\` and
-     \`.pi/state/continual-learning-index.json\` live
-   - The session discovery order below
-   - The memory update rules below
-
-3. Session discovery order — search the project level first, then the user profile level:
+2. Session discovery order — search the project level first, then the user profile level:
    a. **Project level**: \`.pi/sessions/\` under the project root
       (\`find .pi/sessions/ -name "*.jsonl"\` from the project root)
    b. **User profile level**: \`~/.pi/agent/sessions/\`
@@ -44,7 +49,7 @@ export const CONTINUAL_LEARNING_MESSAGE = `Run the continual-learning memory upd
    \`stat\` to compare its mtime against the index and process only files that are
    new or changed. If a file appears in both locations, prefer the project-level one.
 
-4. Memory update rules for the subagent:
+3. Memory update rules:
    - Read existing \`AGENTS.md\` from the project root. If missing, create it with
      \`## Learned User Preferences\` and \`## Learned Workspace Facts\`
    - Parse each new or changed session JSONL and extract only high-signal, durable
@@ -59,14 +64,21 @@ export const CONTINUAL_LEARNING_MESSAGE = `Run the continual-learning memory upd
    - If the merge produces no changes to \`AGENTS.md\`, leave it unchanged but still
      refresh the index
 
-5. After the subagent finishes, report its outcome. If it produced no meaningful
-   updates, respond exactly: \`No high-signal memory updates.\`
+4. After the merge, stage \`AGENTS.md\` (plus the index file if it is tracked) and
+   commit with: \`docs: update AGENTS.md via continual-learning\`. Do not push, and
+   do not create an empty commit when nothing changed.
+
+5. Report the outcome, including whether a pre-run stash was created. If the run
+   produced no meaningful updates, respond exactly: \`No high-signal memory updates.\`
 
 ## Important
 
-- Delegate the work to the subagent — do not run the discovery or merge yourself
-- The subagent must search project-level sessions (\`.pi/sessions/\`) before
-  user-profile sessions (\`~/.pi/agent/sessions/\`)
+- Ask permission first; stop if it is not granted
+- Run the discovery and merge yourself — do not delegate to a subagent
+- Search project-level sessions (\`.pi/sessions/\`) before user-profile sessions
+  (\`~/.pi/agent/sessions/\`)
+- Stash pending changes before running and leave the stash in place
+- Commit the result when it changes \`AGENTS.md\`; never push
 - Plain bullet points only; no evidence/confidence tags
 - Do not write process instructions, rationale, or metadata blocks
 - Exclude secrets, private data, one-off instructions, and transient details
