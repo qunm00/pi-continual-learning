@@ -6,7 +6,6 @@ The plugin combines:
 
 - An **extension** that hooks `agent_settled` events and decides when to trigger learning
 - A **skill** (`continual-learning`) that orchestrates the learning flow
-- An **agent** (`continual-learning-updater`) that describes the same flow for explicit subagent use
 
 When the extension triggers, the main agent runs the flow inline. It asks the user for permission, stashes pending changes, mines new or changed session transcripts, updates `AGENTS.md`, and commits the result without pushing.
 
@@ -125,12 +124,14 @@ pi-continual-learning/
 ├── README.md                             # This file
 ├── LICENSE                               # MIT License
 ├── extensions/
-│   └── continual-learning.ts             # Main extension (event hook + command)
-├── skills/
 │   └── continual-learning/
-│       └── SKILL.md                      # Skill definition
-└── agents/
-    └── continual-learning-updater.md     # Subagent definition
+│       ├── constants.ts                 # Trigger cadence + follow-up message
+│       ├── index.ts                      # Event hook + /continual-learning command
+│       ├── state.ts                      # Cadence state persistence
+│       └── types.ts
+└── skills/
+    └── continual-learning/
+        └── SKILL.md                      # Skill definition
 ```
 
 ## License
