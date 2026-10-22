@@ -17,7 +17,7 @@ Use when the user asks to mine prior chats, maintain `AGENTS.md`, or run the con
 These rules always apply, for both the manual trigger and the automatic trigger:
 
 - **Ask permission before running.** Use `ask_user` and wait for a clear yes before touching any file. Do not start the update while the request is unanswered or skipped.
-- **Run inline.** Do the discovery, parsing, and merge yourself in the current session. Do not delegate to a subagent.
+- **Run inline or delegate.** If a subagent tool is available, dispatch the update to a subagent. Otherwise, do the discovery, parsing, and merge yourself in the current session.
 - **Stash before running.** If the working tree has uncommitted changes, run `git stash push -u -m "continual-learning: pre-run stash"` first. Note the stash name so it can be reported later. Do not pop it during the run — the files you write must not mix with the user's work in progress.
 - **Commit when finished.** After a successful run that produced changes, stage the updated `AGENTS.md` (and the index file if it is tracked) and commit with the message `docs: update AGENTS.md via continual-learning`. Do not push. Leave the user's stash in place and tell the user it exists, so they can pop it themselves.
 
@@ -29,7 +29,9 @@ If the run produces no changes to `AGENTS.md`, still refresh the index and do no
    - `## Learned User Preferences`
    - `## Learned Workspace Facts`
 
-2. Discover session files that are new or have been modified since the last update. Search in this order:
+2. If delegating to a subagent: pass the entire workflow to the subagent with a self-contained prompt and wait for completion.
+
+   Otherwise (running inline): discover session files that are new or have been modified since the last update. Search in this order:
    - **Project level** first: `.pi/sessions/` under the project root
    - **User profile level** second: `~/.pi/agent/sessions/`
    Process project-level files first. Use `find` and `stat` to check mtimes relative to `.pi/state/continual-learning-index.json`.
@@ -69,7 +71,9 @@ If the run produces no changes to `AGENTS.md`, still refresh the index and do no
 
 ## Output
 
-- Updated `AGENTS.md` and `.pi/state/continual-learning-index.json` when changes are made
-- A single commit for the changes, and a note about any pre-run stash
-- Otherwise exactly `No high-signal memory updates.`
-- If the user declines or skips the permission question, stop immediately and make no changes
+- If delegating to a subagent: wait for the subagent to report completion
+- If running inline:
+  - Updated `AGENTS.md` and `.pi/state/continual-learning-index.json` when changes are made
+  - A single commit for the changes, and a note about any pre-run stash
+  - Otherwise exactly `No high-signal memory updates.`
+  - If the user declines or skips the permission question, stop immediately and make no changes
