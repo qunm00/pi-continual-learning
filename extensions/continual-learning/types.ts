@@ -38,3 +38,48 @@ export interface RunConfig {
 	trialSessions: number;
 	trialDurationMinutes: number;
 }
+
+export interface RunRecord {
+	type: "run";
+	at: string;
+	trigger: Trigger;
+	model: string;
+	startedAt: string;
+	finishedAt: string;
+	durationMs: number;
+	sessions: SessionFile[];
+	deferred: string[];
+	outcome: "proposal" | "no-change" | "failed";
+	proposalPath?: string;
+	proposalSha256?: string;
+	baseAgentsSha256?: string;
+	changes?: { added: number; updated: number; removed: number };
+	usage?: { input: number; output: number; cost: number };
+	reason?: string;
+	error?: string;
+}
+
+export interface DeclinedRecord {
+	type: "declined";
+	at: string;
+	sessionsSincePrompt: number;
+}
+
+export interface AbortedRecord {
+	type: "aborted";
+	at: string;
+	startedAt: string;
+}
+
+export interface AppliedRecord {
+	type: "applied";
+	at: string;
+	proposalPath: string;
+	proposalSha256: string;
+}
+
+export type LogRecord =
+	| RunRecord
+	| DeclinedRecord
+	| AbortedRecord
+	| AppliedRecord;
