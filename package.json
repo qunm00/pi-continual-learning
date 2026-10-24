@@ -29,7 +29,8 @@
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit",
-		"biome:fix": "biome check --write"
+		"biome:fix": "biome check --write",
+		"test": "node --test extensions/continual-learning/*.test.ts"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": ">=0.80.0"
