@@ -1,6 +1,6 @@
 {
 	"name": "pi-continual-learning",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"description": "Continual learning for pi: automatically mines session transcripts for durable user preferences and workspace facts, incrementally updating AGENTS.md.",
 	"author": "pi-continual-learning",
 	"license": "MIT",

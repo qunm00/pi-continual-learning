@@ -1,20 +1,22 @@
 # Continual Learning for pi
 
-Automatically and incrementally keeps `AGENTS.md` up to date from session transcripts.
+Keeps `AGENTS.md` current without interrupting the work it learns from.
 
-The plugin combines:
+The extension counts new sessions. Once enough have passed, the next new
+session asks one yes/no question. On yes, a one-shot model call reads the
+recent transcripts in the background and writes a proposal file. Nothing is
+written to `AGENTS.md` until you run `/continual-learning apply`.
 
-- An **extension** that hooks `agent_settled` events and decides when to trigger learning
-- A **skill** (`continual-learning`) that orchestrates the learning flow
+## Why it works this way
 
-When the extension triggers, the main agent runs the flow inline. It asks the user for permission, stashes pending changes, mines new or changed session transcripts, updates `AGENTS.md`, and commits the result without pushing.
+Older versions sent a follow-up message into the live session. That started a
+new agent turn mid-task, stashed uncommitted work, and committed on its own.
+This version does none of that:
 
-It is designed to avoid noisy rewrites by:
-
-- Reading existing `AGENTS.md` first and updating matching bullets in place
-- Processing only new or changed session files
-- Writing plain bullet points only (no evidence/confidence metadata)
-- Being conservative — only extracting recurring user preferences and stable workspace facts
+- the question appears at session start, before the first turn
+- the run makes one model call and touches nothing in the conversation
+- the run has no tools, so it cannot write, stash, or commit
+- the only artifact is `AGENTS.proposal.md`, which you review and apply
 
 ## Installation
 
@@ -54,84 +56,126 @@ Or restart pi.
 
 ## How it works
 
-On eligible `agent_settled` events, the extension may send a follow-up message that tells the agent to run the continual-learning memory update flow.
+1. Each new session (`startup` or `new`, not `resume`, `fork`, or `/reload`)
+   increments a counter in `.pi/state/continual-learning.json`.
+2. When the counter reaches the interval, the session asks once:
+   "Run a memory proposal from the last N sessions in the background?"
+3. On yes, the extension condenses the new session transcripts (user and
+   assistant text only) and makes one model call. No agent turn is involved.
+4. The response is validated and written to `AGENTS.proposal.md`.
+5. `/continual-learning apply` shows a diff and writes `AGENTS.md` if you
+   accept it. No commit is created.
 
-The extension keeps local runtime state in:
+If you decline, the counter resets and it stays quiet for another interval.
 
-- `.pi/state/continual-learning.json` (cadence state)
+## Commands
 
-The memory update uses an incremental session index at:
+| Command | What it does |
+|---------|--------------|
+| `/continual-learning` | Starts a run now, without the startup question |
+| `/continual-learning apply` | Shows the diff and applies `AGENTS.proposal.md` |
+| `/continual-learning log` | Shows the last 10 runs |
 
-- `.pi/state/continual-learning-index.json`
+## Model
+
+The run uses the model in this file:
+
+```
+~/.pi/agent/extensions/continual-learning/config.json
+```
+
+```json
+{
+  "model": "anthropic/claude-haiku-4-5"
+}
+```
+
+- `model` is `provider/id`.
+- Unknown keys are ignored.
+- No file, no `model` key, an empty string, or `null` means: use the model the
+  session was started with.
+- A malformed file, or a configured model that does not exist or has no auth,
+  fails the run and is recorded in the log. It never falls back silently.
+
+The extension only reads this file; it never creates or edits it.
+
+## Output files
+
+| Path | Purpose |
+|------|---------|
+| `AGENTS.proposal.md` | Proposed `AGENTS.md`, replaced by each successful run, deleted after apply |
+| `.pi/state/continual-learning.json` | Session counter and in-flight claim |
+| `.pi/state/continual-learning-index.json` | Which session transcripts were processed |
+| `.pi/state/continual-learning-runs.jsonl` | Local run log, newest 200 records |
+| `.pi/state/proposals/rejected-*.txt` | Raw model output that failed validation, newest 5 |
+
+`AGENTS.proposal.md` is untracked, so it shows in `git status` until you apply
+or delete it. Everything else lives under `.pi/`, which is git-ignored.
 
 ## Trigger cadence
 
-Default cadence:
+Defaults:
 
-- minimum 10 completed agent turns
-- minimum 120 minutes since the last run
-- session file mtime must advance since the previous run
+- 5 new sessions between prompts
+- declining resets the counter, so the next prompt is another 5 sessions away
 
-Trial mode defaults (opt-in via env var):
+Trial mode (opt-in via env var):
 
-- minimum 3 completed turns
-- minimum 15 minutes
-- automatically expires after 24 hours, then falls back to default cadence
-
-### Manual trigger
-
-You can also trigger the memory update manually at any time:
-
-```text
-/continual-learning
-```
-
-Or by invoking the skill:
-
-```text
-/skill:continual-learning
-```
+- 1 session between prompts
+- applies for 24 hours after the first counted session
 
 ## Environment overrides
 
 | Variable | Legacy variable | Default |
 |----------|----------------|---------|
-| `CONTINUAL_LEARNING_MIN_TURNS` | `CONTINUOUS_LEARNING_MIN_TURNS` | `10` |
-| `CONTINUAL_LEARNING_MIN_MINUTES` | `CONTINUOUS_LEARNING_MIN_MINUTES` | `120` |
+| `CONTINUAL_LEARNING_SESSION_INTERVAL` | `CONTINUOUS_LEARNING_SESSION_INTERVAL` | `5` |
+| `CONTINUAL_LEARNING_TIMEOUT_MS` | `CONTINUOUS_LEARNING_TIMEOUT_MS` | `600000` |
+| `CONTINUAL_LEARNING_MAX_SESSIONS` | `CONTINUOUS_LEARNING_MAX_SESSIONS` | `20` |
+| `CONTINUAL_LEARNING_MAX_INPUT_CHARS` | `CONTINUOUS_LEARNING_MAX_INPUT_CHARS` | `200000` |
 | `CONTINUAL_LEARNING_TRIAL_MODE` | `CONTINUOUS_LEARNING_TRIAL_MODE` | (disabled) |
-| `CONTINUAL_LEARNING_TRIAL_MIN_TURNS` | `CONTINUOUS_LEARNING_TRIAL_MIN_TURNS` | `3` |
-| `CONTINUAL_LEARNING_TRIAL_MIN_MINUTES` | `CONTINUOUS_LEARNING_TRIAL_MIN_MINUTES` | `15` |
-| `CONTINUAL_LEARNING_TRIAL_DURATION_MINUTES` | `CONTINUOUS_LEARNING_TRIAL_DURATION_MINUTES` | `1440` (24h) |
+| `CONTINUAL_LEARNING_TRIAL_SESSIONS` | `CONTINUOUS_LEARNING_TRIAL_SESSIONS` | `1` |
+| `CONTINUAL_LEARNING_TRIAL_DURATION_MINUTES` | `CONTINUOUS_LEARNING_TRIAL_DURATION_MINUTES` | `1440` |
 
-Set any of these in your environment or `.env` file to override the defaults.
+Set any of these in your environment or `.env` file.
 
 ## Output format in AGENTS.md
 
-The memory update writes only:
+The proposal keeps only these sections in the learned part of the file:
 
 ```markdown
 ## Learned User Preferences
 ## Learned Workspace Facts
 ```
 
-Each item is a plain bullet point, with no metadata or evidence tags.
+Each item is a plain bullet, at most 12 per section. Any other section of
+`AGENTS.md` is preserved verbatim, and a proposal that changes it is rejected.
 
 ## Project structure
 
 ```
 pi-continual-learning/
 ├── package.json                          # Pi package manifest
-├── README.md                             # This file
-├── LICENSE                               # MIT License
+├── README.md
+├── LICENSE
 ├── extensions/
 │   └── continual-learning/
-│       ├── constants.ts                 # Trigger cadence + follow-up message
-│       ├── index.ts                      # Event hook + /continual-learning command
-│       ├── state.ts                      # Cadence state persistence
-│       └── types.ts
-└── skills/
-    └── continual-learning/
-        └── SKILL.md                      # Skill definition
+│       ├── index.ts                      # session_start trigger + commands
+│       ├── cadence.ts                    # session counter decision
+│       ├── config.ts                     # env config + model config file
+│       ├── extract.ts                    # session discovery + condensation
+│       ├── model.ts                      # model resolution + completion call
+│       ├── prompt.ts                     # prompt, parsing, validation
+│       ├── proposals.ts                  # proposal file + diff
+│       ├── log.ts                        # local run log
+│       ├── run.ts                        # one-shot orchestration
+│       ├── state.ts                      # state, index, in-flight claim
+│       ├── types.ts
+│       └── constants.ts
+├── skills/
+│   └── continual-learning/
+│       ├── SKILL.md                      # interactive wrapper
+│       └── rules.md                      # memory rules
+└── docs/
 ```
 
 ## License
