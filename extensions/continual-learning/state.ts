@@ -38,13 +38,6 @@ export function parseBoolean(value: string | undefined): boolean {
 	);
 }
 
-export function readEnvValue(
-	primary: string,
-	legacy: string,
-): string | undefined {
-	return process.env[primary] ?? process.env[legacy];
-}
-
 export function getStateFilePath(cwd: string): string {
 	return resolve(cwd, STATE_FILE_RELATIVE);
 }
