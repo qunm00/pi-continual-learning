@@ -14,6 +14,17 @@ export const TRIAL_DEFAULT_MIN_TURNS = 3;
 export const TRIAL_DEFAULT_MIN_MINUTES = 15;
 export const TRIAL_DEFAULT_DURATION_MINUTES = 24 * 60;
 
+// Session-based cadence and out-of-band run defaults.
+export const DEFAULT_SESSION_INTERVAL = 5;
+export const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+export const DEFAULT_MAX_SESSIONS = 20;
+export const DEFAULT_MAX_INPUT_CHARS = 200_000;
+export const DEFAULT_TRIAL_SESSIONS = 1;
+
+// Model config lives beside the extension directory under the agent dir.
+export const MODEL_CONFIG_DIR_PARTS = ["extensions", "continual-learning"];
+export const MODEL_CONFIG_FILE = "config.json";
+
 /**
  * Follow-up message sent to the agent when the memory update cadence is met.
  * The agent runs the update inline: it asks permission, stashes pending work,
