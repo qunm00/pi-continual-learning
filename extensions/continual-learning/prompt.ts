@@ -141,6 +141,23 @@ function splitFile(markdown: string): SplitFile | { detail: string } {
 	};
 }
 
+/**
+ * A current file with no learned sections is normal (hand-written notes, or a
+ * first run). Its whole text is treated as preserved content.
+ */
+function currentSections(markdown: string | null): SplitFile {
+	if (markdown === null) return { preferences: [], facts: [], rest: "" };
+	const split = splitFile(markdown);
+	if ("detail" in split) {
+		return {
+			preferences: [],
+			facts: [],
+			rest: markdown.replace(/\r\n/g, "\n").trim(),
+		};
+	}
+	return split;
+}
+
 export type ValidationResult = { ok: true } | { ok: false; detail: string };
 
 export function validateProposal(
@@ -168,16 +185,8 @@ export function validateProposal(
 		};
 	}
 
-	const previous = current === null ? null : splitFile(current);
-	if (previous !== null && "detail" in previous) {
-		return {
-			ok: false,
-			detail: `current AGENTS.md is malformed: ${previous.detail}`,
-		};
-	}
-
-	const expectedRest = previous === null ? "" : previous.rest;
-	if (next.rest !== expectedRest) {
+	const previous = currentSections(current);
+	if (next.rest !== previous.rest) {
 		return {
 			ok: false,
 			detail: "content outside the two learned sections changed",
@@ -214,17 +223,13 @@ export function countChanges(
 	proposed: string,
 ): { added: number; updated: number; removed: number } {
 	const next = splitFile(proposed);
-	const previous = current === null ? null : splitFile(current);
+	const previous = currentSections(current);
 
 	const nextPreferences = "detail" in next ? [] : next.preferences;
 	const nextFacts = "detail" in next ? [] : next.facts;
-	const previousPreferences =
-		previous === null || "detail" in previous ? [] : previous.preferences;
-	const previousFacts =
-		previous === null || "detail" in previous ? [] : previous.facts;
 
-	const preferences = sectionDiff(previousPreferences, nextPreferences);
-	const facts = sectionDiff(previousFacts, nextFacts);
+	const preferences = sectionDiff(previous.preferences, nextPreferences);
+	const facts = sectionDiff(previous.facts, nextFacts);
 
 	return {
 		added: preferences.added + facts.added,

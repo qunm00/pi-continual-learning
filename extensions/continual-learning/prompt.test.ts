@@ -131,3 +131,22 @@ test("countChanges reports added, removed, and position-wise updates", () => {
 		removed: 0,
 	});
 });
+
+test("validateProposal accepts adding learned sections to a file that has none", () => {
+	const current = "# Notes\n\nhand written\n";
+
+	assert.deepEqual(
+		validateProposal(
+			`# Notes\n\nhand written\n\n${learned(["a"], ["b"])}`,
+			current,
+		),
+		{ ok: true },
+	);
+});
+
+test("countChanges counts bullets added to a file with no learned sections", () => {
+	assert.deepEqual(
+		countChanges("# Notes\n", `# Notes\n\n${learned(["a"], ["b"])}`),
+		{ added: 2, updated: 0, removed: 0 },
+	);
+});
