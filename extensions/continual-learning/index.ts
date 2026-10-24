@@ -199,7 +199,11 @@ export default function (pi: ExtensionAPI) {
 		const now = Date.now();
 
 		try {
-			const stale = await reapStaleRun(ctx.cwd, config.timeoutMs, now);
+			const stale = await reapStaleRun(
+				ctx.cwd,
+				config.timeoutMs + 300_000,
+				now,
+			);
 			if (stale) {
 				appendLog(ctx.cwd, {
 					type: "aborted",
