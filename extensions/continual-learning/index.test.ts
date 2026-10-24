@@ -11,11 +11,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import createExtension from "./index.ts";
 import { appendLog, readLog } from "./log.ts";
-import {
-	hashContent,
-	readProposal,
-	writeProposal,
-} from "./proposals.ts";
+import { hashContent, readProposal, writeProposal } from "./proposals.ts";
 import { getStateFilePath, loadState } from "./state.ts";
 
 const fakeModel = { provider: "p", id: "m" } as unknown as Model<Api>;
