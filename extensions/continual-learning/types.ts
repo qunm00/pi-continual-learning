@@ -28,3 +28,13 @@ export interface SessionIndex {
 	version: 1;
 	files: Record<string, SessionIndexEntry>;
 }
+
+export interface RunConfig {
+	sessionInterval: number;
+	timeoutMs: number;
+	maxSessions: number;
+	maxInputChars: number;
+	trialEnabled: boolean;
+	trialSessions: number;
+	trialDurationMinutes: number;
+}
