@@ -66,6 +66,11 @@ Or restart pi.
 5. `/continual-learning apply` shows a diff and writes `AGENTS.md` if you
    accept it. No commit is created.
 
+Transcripts are read from three places: the project's `.pi/sessions` folder,
+the agent's global sessions folder, and the folder that holds the current
+session file. The last place covers custom session locations, such as a
+sandbox.
+
 If you decline, the counter resets and it stays quiet for another interval.
 
 ## Commands

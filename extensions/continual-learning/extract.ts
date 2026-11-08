@@ -14,7 +14,7 @@ import {
 	readSync,
 	statSync,
 } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { SessionFile, SessionIndex } from "./types.ts";
 
 const MAX_USER_CHARS = 2048;
@@ -123,9 +123,16 @@ export function listCandidateSessions(
 	input: ListCandidateInput,
 ): SessionFile[] {
 	const projectFiles = walkSessionFiles(join(input.cwd, ".pi", "sessions"));
-	const userFiles = walkSessionFiles(join(input.agentDir, "sessions")).filter(
-		(path) => readSessionCwd(path) === input.cwd,
-	);
+	const sessionDirs = [join(input.agentDir, "sessions")];
+	const currentSessionDir = input.currentSessionFile
+		? dirname(input.currentSessionFile)
+		: null;
+	if (currentSessionDir && !sessionDirs.includes(currentSessionDir)) {
+		sessionDirs.push(currentSessionDir);
+	}
+	const userFiles = sessionDirs
+		.flatMap((dir) => walkSessionFiles(dir))
+		.filter((path) => readSessionCwd(path) === input.cwd);
 
 	const seen = new Set<string>();
 	const candidates: SessionFile[] = [];

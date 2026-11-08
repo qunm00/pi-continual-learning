@@ -163,6 +163,33 @@ test("listCandidateSessions skips unchanged files, the current session, and othe
 	assert.ok(!paths.includes(otherProject));
 });
 
+test("listCandidateSessions finds siblings of the current session outside the agent dir", () => {
+	const cwd = tempDir("cl-cwd-");
+	const agentDir = tempDir("cl-agent-");
+	const sessionDir = tempDir("cl-session-");
+
+	const current = join(sessionDir, "current.jsonl");
+	const sibling = join(sessionDir, "sibling.jsonl");
+	const otherProject = join(sessionDir, "other.jsonl");
+
+	writeSession(current, [header(cwd)], 1000);
+	writeSession(sibling, [header(cwd)], 1000);
+	writeSession(otherProject, [header("/somewhere/else")], 1000);
+
+	const files = listCandidateSessions({
+		cwd,
+		agentDir,
+		currentSessionFile: current,
+		index: emptyIndex(),
+		maxSessions: 20,
+	});
+	const paths = files.map((file) => file.path);
+
+	assert.ok(paths.includes(sibling));
+	assert.ok(!paths.includes(current));
+	assert.ok(!paths.includes(otherProject));
+});
+
 test("listCandidateSessions sorts oldest first and caps the count", () => {
 	const cwd = tempDir("cl-cwd-");
 	const agentDir = tempDir("cl-agent-");
